@@ -1,5 +1,5 @@
 # C++ objects and libs
-
+build/
 *.slo
 *.lo
 *.o
@@ -9,9 +9,9 @@
 *.so
 *.dll
 *.dylib
-
+.svn
 # Qt-es
-
+*.txt.user
 *.pro.user
 *.pro.user.*
 moc_*.cpp
