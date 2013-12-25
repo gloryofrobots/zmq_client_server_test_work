@@ -1,4 +1,8 @@
 #include "MessageProviderJson.h"
+#include "json.h"
+#include "types.h"
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 using namespace boost::posix_time;
 
 namespace dmsg 
@@ -11,7 +15,7 @@ namespace dmsg
     ///////////////////////////////////////////////////////////////////
     void MessageProviderJson::serializeMessage(const Message & message, TString& dest)
     {
-        //TRawConstString uuid = this->getUUIDString();
+            TRawConstString uuid = "";
             ptime utc_time = second_clock::universal_time();
             json::object obj;
             obj.insert("id", uuid);
