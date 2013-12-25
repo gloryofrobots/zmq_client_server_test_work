@@ -2,24 +2,41 @@ project(server_project)
 
 cmake_minimum_required(VERSION 2.8)
 
-set(SRC_LIST 
-    ${SRC_LIST}
-    "main.cpp"
-    "Server.cpp"
-    "Server.h"
-    "ServerZMQ.cpp"
-    "ServerZMQ.h"
-    )
-
-   set(LIB_DIR 
+set(LIB_DIR 
     "${CMAKE_CURRENT_SOURCE_DIR}/.."
     )
-    
-add_executable(server ${SRC_LIST})
 
-add_subdirectory(${LIB_DIR}/cppjson cppjson)
-include_directories ("${LIB_DIR}/cppjson")
-set (EXTRA_LIBS ${EXTRA_LIBS} cppjson)
+SET(dep_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
+
+FIND_PACKAGE(dep)
+
+#message(status "** Boost Include: ${Boost_INCLUDE_DIR}")
+#message(status "** Boost Libraries: ${Boost_LIBRARY_DIRS}")
+#message(status "** Boost Libraries: ${Boost_LIBRARIES}")
+
+find_package(Boost 1.47 COMPONENTS date_time REQUIRED)
+
+IF(DEP_FOUND)
+INCLUDE(src.cmake)
+    
+ADD_EXECUTABLE(server ${SOURCES})
+
+ADD_SUBDIRECTORY(${LIB_DIR}/cppjson cppjson)
+ADD_SUBDIRECTORY(${LIB_DIR}/message message)
+
+
+INCLUDE_DIRECTORIES("${LIB_DIR}/common")
+INCLUDE_DIRECTORIES("${LIB_DIR}/zmqhelpers")
+INCLUDE_DIRECTORIES("${LIB_DIR}/message")
+
+INCLUDE_DIRECTORIES(${ZEROMQ_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+
+LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+LINK_DIRECTORIES(${ZEROMQ_LIBRARY})
+
+SET(EXTRA_LIBS ${EXTRA_LIBS} cppjson ${ZEROMQ_LIBRARY} ${Boost_LIBRARIES})
 SET_TARGET_PROPERTIES(cppjson PROPERTIES LINKER_LANGUAGE C)
 
-target_link_libraries (server  ${EXTRA_LIBS})
+TARGET_LINK_LIBRARIES (server  ${EXTRA_LIBS})
+ENDIF ( DEP_FOUND )
