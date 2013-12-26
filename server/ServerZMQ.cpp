@@ -1,5 +1,5 @@
 #include "ServerZMQ.h"
-
+#include "LogSystem.h"
 extern "C" 
 {
 #include "zmqhelpers.h"
@@ -9,10 +9,15 @@ namespace dmsg
 {
     namespace dserver
     {
+        static void zmqlog(TRawConstString msg)
+        {
+            DMSG_LOGGER("%s %s",msg, zmq_strerror (errno));
+        }
+        
         ServerZMQ::ServerZMQ(MessageProvider* messageProvider, const TString &subscribeId) 
             : Server(messageProvider, subscribeId)
             , m_context(0)
-            , m_publisher(0)
+            , m_socket(0)
         {
         }
         
@@ -23,52 +28,73 @@ namespace dmsg
         
         bool ServerZMQ::_onInit(TUInt port)
         {
+            //init zmq
             m_context = zmq_ctx_new();
             if (m_context == 0)
             {
-                //LOG error
+                zmqlog("Error occurred during zmq_ctx_new()");
                 return false;
             } 
             
-            m_publisher = zmq_socket(m_context, ZMQ_PUB);
-            if (m_publisher == 0)
+            m_socket = zmq_socket(m_context, ZMQ_PUB);
+            if (m_socket == 0)
             {
-                //LOG error
+                zmqlog("Error occurred during zmq_socket()");
                 clear();
                 return false;
             } 
             
+            //bind to chosen port
             TChar address[100] = {'\0'};
             sprintf(address, "tcp://*:%u", port);
-            int result = zmq_bind(m_publisher, address);
+            int result = zmq_bind(m_socket, address);
             if (result != 0)
             {
+                zmqlog("Error occurred during zmq_bind()");
                 clear();
                 return false;
             }
             
+            //init signal handler
+            s_catch_signals();
             return true;
         }
         
         bool ServerZMQ::_onUpdate()
         {
-            static int count = 0;
-            //std::cout << "step " << count;
-            const TString& subscriberId = this->getSubscribeId();
-            s_sendmore(m_publisher, subscriberId.c_str());
+            if (s_interrupted)
+            {
+                return false;
+            } 
             
-            const TString& message = createNewMessageString();
-            s_send(m_publisher, message.c_str());
-            count++;
+            int result;
+            const TString& subscriberId = this->getSubscribeId();
+            result = s_sendmore(m_socket, subscriberId.c_str());
+            if (result == -1)
+            {
+                DMSG_LOGGER("Error occurred during send subscribe id");
+            }
+            
+            const TString& message = getMessageString();
+            DMSG_LOGGER("%s - 1 2 3 %d",message.c_str(), 4);
+            
+            result = s_send_const(m_socket, message.c_str());
+            if (result == -1)
+            {
+                zmqlog("Error occurred during send message ");
+                DMSG_LOGGER("Error sending %s ", message.c_str());
+            }
+            
+            s_sleep(1000);
             return true;
         }
         
         void ServerZMQ::clear()
         {
-            if (m_publisher != 0)
+            if (m_socket != 0)
             {   
-                zmq_close(m_publisher);
-                m_publisher = 0;
+                zmq_close(m_socket);
+                m_socket = 0;
             }
             
             if (m_context != 0)
@@ -79,62 +105,3 @@ namespace dmsg
         }
     }
 }
-
-
-
-
-
-
-
-
-//#ifdef WIN32
-//#include "../msinttypes/inttypes.h"
-//#else
-//#include <inttypes.h>
-//#endif
-
-
-//static uint64_t generateId(uint16_t v1, uint16_t v2, uint16_t v3, uint16_t v4)
-//{ 
-//   uint64_t id;
-//   id = v1 | (((uint64_t)v2) << 16) | (((uint64_t)v3) << 32) | (((uint64_t)v4) << 48);
-//   return id;
-//}
-/*
-// Weather update server
-// Binds PUB socket to tcp://*:5556
-// Publishes random weather updates
-
-#include "zhelpers.h"
-
-int main (void)
-{
-// Prepare our context and publisher
-void *context = zmq_ctx_new ();
-void *publisher = zmq_socket (context, ZMQ_PUB);
-int rc = zmq_bind (publisher, "tcp://*:5556");
-assert (rc == 0);
-rc = zmq_bind (publisher, "ipc://weather.ipc");
-assert (rc == 0);
-
-// Initialize random number generator
-srandom ((unsigned) time (NULL));
-while (1) {
-// Get values that will fool the boss
-int zipcode, temperature, relhumidity;
-zipcode = randof (100000);
-temperature = randof (215) - 80;
-relhumidity = randof (50) + 10;
-
-// Send message to all subscribers
-char update [20];
-sprintf (update, "%05d %d %d", zipcode, temperature, relhumidity);
-s_send (publisher, update);
-}
-zmq_close (publisher);
-zmq_ctx_destroy (context);
-return 0;
-}
-
-
-*/

@@ -1,28 +1,46 @@
-project(client_project)
-cmake_minimum_required(VERSION 2.8)
+PROJECT(client_project)
 
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
+SET(LIB_DIR 
+    "${CMAKE_CURRENT_SOURCE_DIR}/.."
+    )
+
+SET(dep_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
 
 FIND_PACKAGE(Qt4 REQUIRED)
 
-SET(dep_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
 FIND_PACKAGE(dep REQUIRED)
 
+IF(NOT DEP_FOUND)
+    MESSAGE(FATAL_ERROR "Dependencies not found")
+ENDIF(DEP_FOUND)
 
-QT4_WRAP_CPP(client_HEADERS_MOC ${client_HEADERS})
+INCLUDE(src.cmake)
+
+QT4_WRAP_CPP(client_HEADERS_MOC ${client_QTHEADERS})
 INCLUDE(${QT_USE_FILE})
+
 ADD_DEFINITIONS(${QT_DEFINITIONS})
 
-set(LIB_DIR 
-"${CMAKE_CURRENT_SOURCE_DIR}/.."
-)
-    
-add_executable(client ${client_SOURCES} ${client_HEADERS_MOC})
+ADD_EXECUTABLE(client ${client_SOURCES} ${client_HEADERS_MOC} ${client_HEADERS})
 
-add_subdirectory(${LIB_DIR}/cppjson cppjson)
-include_directories ("${LIB_DIR}/cppjson" ${CMAKE_CURRENT_BINARY_DIR})
+INCLUDE_DIRECTORIES("${LIB_DIR}/common")
 
-SET_TARGET_PROPERTIES(cppjson PROPERTIES LINKER_LANGUAGE C)
-set (EXTRA_LIBS ${EXTRA_LIBS} cppjson ${QT_LIBRARIES})
+INCLUDE_DIRECTORIES("${LIB_DIR}/zmqhelpers")
 
-target_link_libraries (client  ${EXTRA_LIBS})
+INCLUDE_DIRECTORIES("${LIB_DIR}/message")
+ADD_SUBDIRECTORY(${LIB_DIR}/message message)
+
+INCLUDE_DIRECTORIES("${LIB_DIR}/timer")
+ADD_SUBDIRECTORY(${LIB_DIR}/timer timer)
+
+INCLUDE_DIRECTORIES("${LIB_DIR}/logsystem")
+ADD_SUBDIRECTORY(${LIB_DIR}/logsystem logsystem)
+
+INCLUDE_DIRECTORIES(${ZEROMQ_INCLUDE_DIR})
+LINK_DIRECTORIES(${ZEROMQ_LIBRARY})
+
+SET(EXTRA_LIBS ${EXTRA_LIBS} logsystem message timer ${QT_LIBRARIES} ${ZEROMQ_LIBRARY})
+
+TARGET_LINK_LIBRARIES(client ${EXTRA_LIBS})

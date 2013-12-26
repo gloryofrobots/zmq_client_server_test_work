@@ -12,6 +12,7 @@ build/
 .svn
 *~
 *swp
+*autosave
 # Qt-es
 *.txt.user
 *.pro.user

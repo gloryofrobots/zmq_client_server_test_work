@@ -3,13 +3,19 @@
 set(client_SOURCES 
     "main.cpp"
     "Client.cpp"
-    "ClientZMQ.cpp"
+    "Subscriber.cpp"
+    "SubscriberZMQ.cpp"
     )
 
-SET(client_HEADERS 
+SET(client_QTHEADERS
     "Client.h" 
-    "ClientZMQ.h"
-    "${LIB_DIR}/common/types.h"
 )
+
+SET(client_HEADERS
+    "${LIB_DIR}/common/types.h"  
+    "Subscriber.h"
+    "SubscriberZMQ.h"
+)
+ 
 
 

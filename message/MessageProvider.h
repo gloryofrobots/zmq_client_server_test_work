@@ -6,8 +6,8 @@ namespace dmsg
     class MessageProvider
     {
     public:
-        virtual void serializeMessage(Message & message, TString& dest) = 0;
-        virtual void deserializeMessage(Message & message, const TString& source) = 0;
+        virtual bool serializeMessage(Message & message, TString& dest) = 0;
+        virtual bool deserializeMessage(Message & message, const TString& source) = 0;
     };
     
 }

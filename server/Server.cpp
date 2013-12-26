@@ -1,8 +1,9 @@
-#include "Server.h"
-#include "UUIDBoost.h"
 #include <ctime>
 #include <string.h>
 
+#include "Server.h"
+#include "UUIDBoost.h"
+#include "LogSystem.h"
 namespace dmsg 
 {
     namespace dserver 
@@ -36,14 +37,17 @@ namespace dmsg
             
             if (this->init(port) == false)
             {
+                DMSG_LOGGER("Can`t initialize server");
                 return false;
             }
             
+            m_isRun = true;
             while (true)
             {
                 bool isSuccess = update();
                 if(isSuccess == false)
                 {
+                    m_isRun = false;
                     return false;
                 }
             }
@@ -51,6 +55,11 @@ namespace dmsg
         /////////////////////////////////////////////////////
         bool Server::update()
         {
+            if(createNewMessageString() == false)
+            {
+                return false;
+            }   
+            
             return this->_onUpdate();
         }
         /////////////////////////////////////////////////////
@@ -58,16 +67,20 @@ namespace dmsg
         {
         }
         /////////////////////////////////////////////////////
-        const TString &Server::createNewMessageString()
+        bool Server::createNewMessageString()
         {
             time_t now = time(0);
             tm* utc = gmtime(&now);
             memcpy((void *)&m_message.utc, (void *)utc, sizeof(tm));
             
-            m_messageProvider->serializeMessage(m_message, m_messageString);
+            return m_messageProvider->serializeMessage(m_message, m_messageString);
+        }
+        /////////////////////////////////////////////////////
+        const TString &Server::getMessageString()
+        {
             return m_messageString;
         }
-        
+        /////////////////////////////////////////////////////
         const TString &Server::getSubscribeId()
         {
             return m_subscribeId;

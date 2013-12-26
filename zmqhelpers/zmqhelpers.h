@@ -58,6 +58,12 @@ s_send (void *socket,const char *string) {
     int size = zmq_send (socket, string, strlen (string), 0);
     return size;
 }
+// Convert C string to 0MQ string and send to socket
+static int
+s_send_const (void *socket,const char *string) {
+    int size = zmq_send_const (socket, string, strlen (string), 0);
+    return size;
+}
 
 // Sends string as 0MQ string, as multipart non-terminal
 static int
@@ -164,6 +170,23 @@ s_console (const char *format, ...)
     vprintf (format, argptr);
     va_end (argptr);
     printf ("\n");
+}
+
+
+static int s_interrupted = 0;
+static void s_signal_handler (int signal_value)
+{
+    s_interrupted = 1;
+}
+
+static void s_catch_signals (void)
+{
+    struct sigaction action;
+    action.sa_handler = s_signal_handler;
+    action.sa_flags = 0;
+    sigemptyset (&action.sa_mask);
+    sigaction (SIGINT, &action, NULL);
+    sigaction (SIGTERM, &action, NULL);
 }
 
 #endif // __ZHELPERS_H_INCLUDED__

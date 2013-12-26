@@ -9,8 +9,8 @@ namespace dmsg
     public:
         MessageProviderJson();
         virtual ~MessageProviderJson();
-        virtual void serializeMessage(Message & message, TString& dest);
-        virtual void deserializeMessage(Message & message, const TString& source);
+        virtual bool serializeMessage(Message & message, TString& dest);
+        virtual bool deserializeMessage(Message & message, const TString& source);
     private:
         TString m_tempBuffer;
         

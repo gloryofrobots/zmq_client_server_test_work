@@ -20,7 +20,8 @@ namespace dmsg
             virtual bool _onInit(TUInt port) = 0;
             virtual bool _onUpdate() = 0;
             
-            const TString& createNewMessageString();
+            bool createNewMessageString();
+            const TString& getMessageString();
             const TString& getSubscribeId();
             
         private:

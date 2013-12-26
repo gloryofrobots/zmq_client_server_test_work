@@ -15,10 +15,10 @@ namespace dmsg
         protected:
             virtual bool _onInit(TUInt port);
             virtual bool _onUpdate();
-            
-            void * m_context;
-            void * m_publisher;
+           
         private:
+            void * m_context;
+            void * m_socket;
             void clear();
         };    
     }
