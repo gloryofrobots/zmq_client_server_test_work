@@ -4,13 +4,13 @@ extern "C"
 {
 #include "zmqhelpers.h"
 }
-
+#include <iostream>
 namespace dmsg
 {
     namespace dserver
     {
-        ServerZMQ::ServerZMQ() 
-            : Server()
+        ServerZMQ::ServerZMQ(MessageProvider* messageProvider, const TString &subscribeId) 
+            : Server(messageProvider, subscribeId)
             , m_context(0)
             , m_publisher(0)
         {
@@ -38,7 +38,7 @@ namespace dmsg
                 return false;
             } 
             
-            TChar address[20] = {'\0'};
+            TChar address[100] = {'\0'};
             sprintf(address, "tcp://*:%u", port);
             int result = zmq_bind(m_publisher, address);
             if (result != 0)
@@ -52,22 +52,29 @@ namespace dmsg
         
         bool ServerZMQ::_onUpdate()
         {
-            getNewMessage();
-            return false;
+            static int count = 0;
+            //std::cout << "step " << count;
+            const TString& subscriberId = this->getSubscribeId();
+            s_sendmore(m_publisher, subscriberId.c_str());
+            
+            const TString& message = createNewMessageString();
+            s_send(m_publisher, message.c_str());
+            count++;
+            return true;
         }
         
         void ServerZMQ::clear()
         {
-            if (m_context != 0)
-            {
-                zmq_ctx_destroy(m_context);
-                m_context = 0;
-            }
-            
             if (m_publisher != 0)
             {   
                 zmq_close(m_publisher);
                 m_publisher = 0;
+            }
+            
+            if (m_context != 0)
+            {
+                zmq_ctx_destroy(m_context);
+                m_context = 0;
             }
         }
     }

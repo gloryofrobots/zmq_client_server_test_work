@@ -1,18 +1,13 @@
 project(client_project)
-FIND_PACKAGE(Qt4 REQUIRED)
-
 cmake_minimum_required(VERSION 2.8)
 
-set(client_SOURCES 
-    "main.cpp"
-    "Client.cpp"
-    "ClientZMQ.cpp"
-    )
 
-SET(client_HEADERS 
-    "Client.h" 
-    "ClientZMQ.h"
-)
+
+FIND_PACKAGE(Qt4 REQUIRED)
+
+SET(dep_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
+FIND_PACKAGE(dep REQUIRED)
+
 
 QT4_WRAP_CPP(client_HEADERS_MOC ${client_HEADERS})
 INCLUDE(${QT_USE_FILE})

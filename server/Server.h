@@ -1,7 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 #include "UUID.h"
-#include "Message.h"
+#include "MessageProvider.h"
 #define DSERVER_MESSAGE_MAX_LENGTH 128
 namespace dmsg 
 {
@@ -10,9 +10,9 @@ namespace dmsg
         class Server
         {
         public:
-            Server();
+            Server(MessageProvider * messageProvider, const TString & subscribeId);
             virtual ~Server();
-           
+            
             bool run(TUInt port);
             
             TRawConstString getUUIDString();
@@ -20,13 +20,19 @@ namespace dmsg
             virtual bool _onInit(TUInt port) = 0;
             virtual bool _onUpdate() = 0;
             
-            void getNewMessage();
-            UUID* m_uuid;
+            const TString& createNewMessageString();
+            const TString& getSubscribeId();
+            
         private:
             bool init(TUInt port);
             bool update();
             bool m_isRun;
             
+            MessageProvider * m_messageProvider;
+            UUID* m_uuid;
+            Message m_message;
+            TString m_messageString;
+            TString m_subscribeId;
         };
     }
 }

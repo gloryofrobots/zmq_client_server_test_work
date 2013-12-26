@@ -9,7 +9,7 @@ namespace dmsg
         class ServerZMQ : public Server
         {
         public:
-            ServerZMQ();
+            ServerZMQ(MessageProvider * messageProvider, const TString & subscribeId);
             virtual ~ServerZMQ();
             
         protected:

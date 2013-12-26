@@ -6,7 +6,7 @@
 #include "json.h"
 
 int main(int argc, char *argv[]) {
-    QApplication app(argc, argv);
+    /*QApplication app(argc, argv);
     QDialog *dialog = new QDialog;
     QLabel *label = new QLabel(dialog);
 
@@ -19,5 +19,8 @@ int main(int argc, char *argv[]) {
     std::string jsontext =  json::pretty_print(obj1);
     label->setText(jsontext.c_str());
     dialog->show();
-    return app.exec();
+    return app.exec();*/
+    
+    
+    
 }

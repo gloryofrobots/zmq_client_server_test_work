@@ -7,9 +7,13 @@ namespace dmsg
     class MessageProviderJson : public MessageProvider
     {
     public:
-        void fillMessage(Message & message);
-        void serializeMessage(const Message & message, TString& dest);
-        void deserializeMessage(Message & message, const TString& source);
+        MessageProviderJson();
+        virtual ~MessageProviderJson();
+        virtual void serializeMessage(Message & message, TString& dest);
+        virtual void deserializeMessage(Message & message, const TString& source);
+    private:
+        TString m_tempBuffer;
+        
     };
 }
 #endif

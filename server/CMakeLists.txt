@@ -8,7 +8,7 @@ set(LIB_DIR
 
 SET(dep_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
 
-FIND_PACKAGE(dep)
+FIND_PACKAGE(dep REQUIRED)
 
 #message(status "** Boost Include: ${Boost_INCLUDE_DIR}")
 #message(status "** Boost Libraries: ${Boost_LIBRARY_DIRS}")
@@ -16,7 +16,10 @@ FIND_PACKAGE(dep)
 
 find_package(Boost 1.47 COMPONENTS date_time REQUIRED)
 
-IF(DEP_FOUND)
+IF(NOT DEP_FOUND)
+    MESSAGE(FATAL_ERROR "Dependencies not found")
+ENDIF(DEP_FOUND)
+
 INCLUDE(src.cmake)
     
 ADD_EXECUTABLE(server ${SOURCES})
@@ -39,5 +42,5 @@ LINK_DIRECTORIES(${ZEROMQ_LIBRARY})
 SET(EXTRA_LIBS ${EXTRA_LIBS} message cppjson ${ZEROMQ_LIBRARY} ${Boost_LIBRARIES})
 
 
-TARGET_LINK_LIBRARIES (server  ${EXTRA_LIBS})
-ENDIF ( DEP_FOUND )
+TARGET_LINK_LIBRARIES(server  ${EXTRA_LIBS})
+

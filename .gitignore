@@ -11,6 +11,7 @@ build/
 *.dylib
 .svn
 *~
+*swp
 # Qt-es
 *.txt.user
 *.pro.user
