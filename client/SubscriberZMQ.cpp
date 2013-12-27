@@ -106,9 +106,9 @@ namespace dmsg
             if (parseMessage(data) == false)
             {
                 DMSG_LOGGER("Error parsing message %s", contents);
-                free(subscribeId);
-                free(contents);
-                return false;
+                //free(subscribeId);
+                //free(contents);
+                //return false;
             }
             
             //log("%i [%s] %s \n",(int)m_state.pingTime, m_state.message.id.c_str(), contents);

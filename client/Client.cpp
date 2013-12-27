@@ -7,15 +7,33 @@
 
 using namespace dmsg;
 
-void SubscribeWorker::setSubscriber( dmsg::dclient::Subscriber* subscriber)
+SubscribeWorker::~SubscribeWorker()
 {
-    m_subscriber = subscriber;
+    if(m_subscriber != NULL)
+    {
+        if(m_subscriber->isOnRun())
+        {
+            m_subscriber->stop();
+        }
+        
+        delete m_subscriber;
+    }
+}
+
+SubscribeWorker::SubscribeWorker(Client::SubscribeListener * subscribeListener,
+                                         MessageProviderJson *provider)
+    : m_subscribeListener(subscribeListener)
+    , m_provider(provider)
+{
 }
 
 void SubscribeWorker::process()
 {
+    m_subscriber = new dclient::SubscriberZMQ(m_provider, "DATETIME_SERVER");
+    m_subscriber->addListener(m_subscribeListener);
+    
     m_subscriber->run(9000);
-    emit finished();
+    
 }
 
 void SubscribeWorker::stop()
@@ -24,6 +42,7 @@ void SubscribeWorker::stop()
     {
         m_subscriber->stop();
     }
+    emit finished();
 }
 
 //SubscribeListener
@@ -49,8 +68,7 @@ void Client::ClientLogger::log(TRawConstString msg)
 }
 /////////////////////////////////////////////////////////
 Client::Client()
-    : m_subscriber(NULL)
-    , m_subscribeListener(NULL)
+    : m_subscribeListener(NULL)
     , m_logger(NULL)
     , m_provider(NULL)
 {
@@ -67,17 +85,6 @@ Client::Client()
 /////////////////////////////////////////////////////////
 Client::~Client()
 {
-    //stop here
-    if(m_subscriber != NULL)
-    {
-        if(m_subscriber->isOnRun())
-        {
-            m_subscriber->stop();
-        }
-        
-        delete m_subscriber;
-    }
-    
     if(m_subscribeListener != NULL)
     {
         delete m_subscribeListener;
@@ -94,14 +101,16 @@ Client::~Client()
     }
     
     LogSystem::destroy();
+
+    qDebug() << "~Client()";
 }
 /////////////////////////////////////////////////////////
 void Client::closeEvent(QCloseEvent *event)
 {
     writeSettings();
-    m_worker->stop();
-    m_thread->wait(100);
-    //emit stopWorker();
+  
+    m_subscribeThread->terminate();
+    m_subscribeThread->wait();
     event->accept();
 }
 /////////////////////////////////////////////////////////
@@ -110,29 +119,29 @@ void Client::showEvent(QShowEvent *event)
     QWidget::showEvent(event);
     QCoreApplication::processEvents();
     
-    //SubscribeThread* thread = new SubscribeThread(this);
-    //thread->setSubscriber(m_subscriber);
-    //thread->start();
-    //thread.wait();
+    m_subscribeThread = new SubscribeThread(this);
+    m_subscribeThread->setSubscriber(m_subscribeListener, m_provider);
+    //connect(this, SIGNAL(stopWorker()), m_subscribeThread, SLOT(quit()));
+    //connect(m_subscribeThread, SIGNAL(finished()), m_subscribeThread, SLOT(deleteLater()));
+    m_subscribeThread->start();
     
-    m_worker = new SubscribeWorker;
+    /*m_worker = new SubscribeWorker(m_subscribeListener, m_provider);
     SubscribeWorker* worker = m_worker;
     m_thread = new QThread();
     QThread* thread = m_thread;
     worker->moveToThread(thread);
-    worker->setSubscriber(m_subscriber);
     
     connect(thread, SIGNAL(started()), worker, SLOT(process()));
     
     connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
     
-    connect(this, SIGNAL(stopWorker()), worker, SLOT(stop()));
+    connect(this, SIGNAL(stopWorker()), worker, SLOT(deleteLater()));
     
     connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
     
     connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
     
-    thread->start();
+    thread->start();*/
 }
 /////////////////////////////////////////////////////////
 void Client::about()
@@ -192,11 +201,8 @@ void Client::initLogSystem()
 /////////////////////////////////////////////////////////
 void Client::initSubscriber()
 {
-    m_provider = new MessageProviderJson();
-    m_subscriber = new dclient::SubscriberZMQ(m_provider, "DATETIME_SERVER");
+    m_provider = new MessageProviderJson(); 
     m_subscribeListener = new SubscribeListener(this);
-    
-    m_subscriber->addListener(m_subscribeListener);
 }
 /////////////////////////////////////////////////////////
 void Client::readSettings()
@@ -233,3 +239,5 @@ void Client::onUpdateState(const dclient::Subscriber::State &state)
     m_lcdNumber->display(datetime.toString(Qt::ISODate));
 }
 /////////////////////////////////////////////////////////
+
+

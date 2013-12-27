@@ -73,19 +73,21 @@ namespace dmsg
             if (result == -1)
             {
                 DMSG_LOGGER("Error occurred during send subscribe id");
+                return false;
             }
             
             const TString& message = getMessageString();
-            DMSG_LOGGER(message.c_str());
+            //DMSG_LOGGER(message.c_str());
             
-            result = s_send_const(m_socket, message.c_str());
+            result = s_send(m_socket, message.c_str());
             if (result == -1)
             {
                 zmqlog("Error occurred during send message ");
                 DMSG_LOGGER("Error sending %s ", message.c_str());
+                return false;
             }
             
-            s_sleep(1000);
+            //s_sleep(1000);
             return true;
         }
         
