@@ -7,44 +7,6 @@
 
 using namespace dmsg;
 
-SubscribeWorker::~SubscribeWorker()
-{
-    if(m_subscriber != NULL)
-    {
-        if(m_subscriber->isOnRun())
-        {
-            m_subscriber->stop();
-        }
-        
-        delete m_subscriber;
-    }
-}
-
-SubscribeWorker::SubscribeWorker(Client::SubscribeListener * subscribeListener,
-                                         MessageProviderJson *provider)
-    : m_subscribeListener(subscribeListener)
-    , m_provider(provider)
-{
-}
-
-void SubscribeWorker::process()
-{
-    m_subscriber = new dclient::SubscriberZMQ(m_provider, "DATETIME_SERVER");
-    m_subscriber->addListener(m_subscribeListener);
-    
-    m_subscriber->run(9000);
-    
-}
-
-void SubscribeWorker::stop()
-{
-    if (m_subscriber != NULL)
-    {
-        m_subscriber->stop();
-    }
-    emit finished();
-}
-
 //SubscribeListener
 Client::SubscribeListener::SubscribeListener(Client *client)
     : m_client(client)
@@ -108,40 +70,16 @@ Client::~Client()
 void Client::closeEvent(QCloseEvent *event)
 {
     writeSettings();
-  
-    m_subscribeThread->terminate();
-    m_subscribeThread->wait();
     event->accept();
+    stopSubscribe();
 }
 /////////////////////////////////////////////////////////
 void Client::showEvent(QShowEvent *event)
 {
     QWidget::showEvent(event);
     QCoreApplication::processEvents();
-    
-    m_subscribeThread = new SubscribeThread(this);
-    m_subscribeThread->setSubscriber(m_subscribeListener, m_provider);
-    //connect(this, SIGNAL(stopWorker()), m_subscribeThread, SLOT(quit()));
-    //connect(m_subscribeThread, SIGNAL(finished()), m_subscribeThread, SLOT(deleteLater()));
-    m_subscribeThread->start();
-    
-    /*m_worker = new SubscribeWorker(m_subscribeListener, m_provider);
-    SubscribeWorker* worker = m_worker;
-    m_thread = new QThread();
-    QThread* thread = m_thread;
-    worker->moveToThread(thread);
-    
-    connect(thread, SIGNAL(started()), worker, SLOT(process()));
-    
-    connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
-    
-    connect(this, SIGNAL(stopWorker()), worker, SLOT(deleteLater()));
-    
-    connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
-    
-    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-    
-    thread->start();*/
+    startSubscribe();
+  
 }
 /////////////////////////////////////////////////////////
 void Client::about()
@@ -150,11 +88,37 @@ void Client::about()
                        tr("The <b>Client</b> is a Client. That`s all."));
 }
 /////////////////////////////////////////////////////////
+void Client::reconnect()
+{
+    if(isOnSubscribe())
+    {
+        stopSubscribe();
+    }
+    
+    startSubscribe();
+}
+/////////////////////////////////////////////////////////
 void Client::createWidgets()
 {
-    m_lcdNumber = new QLCDNumber(this);
-    setCentralWidget(m_lcdNumber);
-    m_lcdNumber->setDigitCount(20);
+     /*m_lcdNumber = new QLCDNumber(this);
+     m_lcdNumber->setDigitCount(20);
+     setCentralWidget(m_lcdNumber);*/
+     
+     QWidget* window = new QWidget(this);
+     
+     m_lcdNumber = new QLCDNumber;
+     m_lcdNumber->setDigitCount(20);
+     m_statusLabel = new QLabel("STATUS");
+     m_pingLabel = new QLabel("PING");
+    
+     QGridLayout *layout = new QGridLayout;
+     layout->addWidget(m_lcdNumber, 0, 0, 1, 2);
+     layout->addWidget(m_statusLabel, 1, 0);
+     layout->addWidget(m_pingLabel, 1, 1);
+  
+     window->setLayout(layout);
+
+     this->setCentralWidget(window);
 }
 /////////////////////////////////////////////////////////
 void Client::createActions()
@@ -164,6 +128,14 @@ void Client::createActions()
     
     exitAct->setStatusTip(tr("Exit the application"));
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
+
+    reconnectAct = new QAction(tr("&Reconnect"), this);
+    reconnectAct->setStatusTip(tr("Reconnect"));
+    connect(reconnectAct, SIGNAL(triggered()), this, SLOT(reconnect()));
+    
+    disconnectAct = new QAction(tr("&Disconnect"), this);
+    disconnectAct->setStatusTip(tr("Disconnect"));
+    connect(disconnectAct, SIGNAL(triggered()), this, SLOT(stopSubscribe()));
     
     aboutAct = new QAction(tr("&About"), this);
     aboutAct->setStatusTip(tr("Show the application's About box"));
@@ -177,6 +149,10 @@ void Client::createActions()
 void Client::createMenus()
 {
     fileMenu = menuBar()->addMenu(tr("&Connection"));
+    fileMenu->addAction(reconnectAct);
+    fileMenu->addAction(disconnectAct);
+    
+    fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
     
     menuBar()->addSeparator();
@@ -196,7 +172,6 @@ void Client::initLogSystem()
     dmsg::LogSystem::keep(new dmsg::LogSystem());
     m_logger = new ClientLogger(this); 
     LogSystem::get()->addLogger(m_logger);
-    //subscriber.run(9000);
 }
 /////////////////////////////////////////////////////////
 void Client::initSubscriber()
@@ -205,11 +180,43 @@ void Client::initSubscriber()
     m_subscribeListener = new SubscribeListener(this);
 }
 /////////////////////////////////////////////////////////
+void Client::startSubscribe()
+{
+    if (isOnSubscribe() == true)
+    {
+        DMSG_LOGGER("Invalid startSubscribe() call thread is not NULL");
+        stopSubscribe();
+    }
+    
+    m_subscribeThread = new SubscribeThread();
+    m_subscribeThread->setSubscriber(m_subscribeListener, m_provider);
+    connect(m_subscribeThread, SIGNAL(finished()), m_subscribeThread, SLOT(deleteLater()));
+    m_subscribeThread->start();
+}
+/////////////////////////////////////////////////////////
+void Client::stopSubscribe()
+{
+    if (m_subscribeThread == NULL)
+    {
+        DMSG_LOGGER("Invalid stopSubscribe() call thread is NULL");
+        return;
+    }
+    
+    m_subscribeThread->terminate();
+    m_subscribeThread->wait();
+    m_subscribeThread = NULL;
+}
+/////////////////////////////////////////////////////////
+bool Client::isOnSubscribe()
+{
+    return m_subscribeThread == NULL;
+}
+/////////////////////////////////////////////////////////
 void Client::readSettings()
 {
     QSettings settings("Trolltech", "Application Example");
     QPoint pos = settings.value("pos", QPoint(200, 200)).toPoint();
-    QSize size = settings.value("size", QSize(400, 400)).toSize();
+    QSize size = settings.value("size", QSize(500, 500)).toSize();
     resize(size);
     move(pos);
 }
@@ -231,12 +238,22 @@ void Client::onUpdateState(const dclient::Subscriber::State &state)
     if(state.message.timestamp == 0)
     {
         m_lcdNumber->display("0000-00-00 00-00-00");
-        return;
+        m_pingLabel->setText("");
+    }
+    else
+    {
+        QDateTime datetime = QDateTime::fromTime_t(state.message.timestamp);
+        //qDebug() << datetime.toString(Qt::ISODate);
+        m_lcdNumber->display(datetime.toString(Qt::ISODate));
+        
+        QString ping = tr("Ping time: ") + QString::number(state.pingTime);
+        m_pingLabel->setText(ping);
     }
     
-    QDateTime datetime = QDateTime::fromTime_t(state.message.timestamp);
-    //qDebug() << datetime.toString(Qt::ISODate);
-    m_lcdNumber->display(datetime.toString(Qt::ISODate));
+    QString connectionType = tr("Connection is ");
+    connectionType += state.status == dclient::Subscriber::OFFLINE ? tr("offline") : tr("online");
+
+    m_statusLabel->setText(connectionType);
 }
 /////////////////////////////////////////////////////////
 

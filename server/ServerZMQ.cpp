@@ -13,19 +13,19 @@ namespace dmsg
         {
             DMSG_LOGGER("%s %s",msg, zmq_strerror (errno));
         }
-        
+        //////////////////////////////////////////////////////////////////////////
         ServerZMQ::ServerZMQ(MessageProvider* messageProvider, const TString &subscribeId) 
             : Server(messageProvider, subscribeId)
             , m_context(0)
             , m_socket(0)
         {
         }
-        
+        //////////////////////////////////////////////////////////////////////////
         ServerZMQ::~ServerZMQ()
         {
             clear();
         }
-        
+        //////////////////////////////////////////////////////////////////////////
         bool ServerZMQ::_onInit(TUInt port)
         {
             //init zmq
@@ -59,7 +59,7 @@ namespace dmsg
             s_catch_signals();
             return true;
         }
-        
+        //////////////////////////////////////////////////////////////////////////
         bool ServerZMQ::_onUpdate()
         {
             if (s_interrupted)
@@ -77,7 +77,7 @@ namespace dmsg
             }
             
             const TString& message = getMessageString();
-            //DMSG_LOGGER(message.c_str());
+            DMSG_LOGGER(message.c_str());
             
             result = s_send(m_socket, message.c_str());
             if (result == -1)
@@ -87,10 +87,13 @@ namespace dmsg
                 return false;
             }
             
-            //s_sleep(1000);
+            //sleep for 1 to 2 seconds
+            int sleeptime = (rand() % 1000) + 1000;
+            s_sleep(sleeptime);
+            
             return true;
         }
-        
+        //////////////////////////////////////////////////////////////////////////
         void ServerZMQ::clear()
         {
             if (m_socket != 0)

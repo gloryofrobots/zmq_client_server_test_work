@@ -112,7 +112,7 @@ namespace dmsg
             }
             
             //log("%i [%s] %s \n",(int)m_state.pingTime, m_state.message.id.c_str(), contents);
-            DMSG_LOGGER(" %s ", contents);
+            //DMSG_LOGGER(" %s ", contents);
             free(subscribeId);
             free(contents);
 

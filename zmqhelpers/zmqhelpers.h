@@ -138,6 +138,9 @@ s_sleep (int msecs)
     #endif
 }
 
+
+
+
 // Return current system clock as milliseconds
 static int64_t
 s_clock (void)
@@ -152,6 +155,21 @@ s_clock (void)
     return (int64_t) (tv.tv_sec * 1000 + tv.tv_usec / 1000);
     #endif
 }
+
+
+// Sleep for a number of milliseconds
+static void
+s_sleep2 (int msecs)
+{
+    int64_t start = s_clock();
+    while(1)
+    {
+        int64_t check = s_clock();
+        int64_t delta = check - start;
+        if(delta > msecs) return;
+    }
+}
+
 
 // Print formatted string to stdout, prefixed by date/time and
 // terminated with a newline.

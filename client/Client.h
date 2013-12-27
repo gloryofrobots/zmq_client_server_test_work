@@ -5,6 +5,7 @@
 #include <QtDebug>
 #include <QMainWindow>
 #include <QLCDNumber>
+#include <QLabel>
 #include <QThread>
 #include "LogSystem.h"
 
@@ -12,7 +13,6 @@
 #include "SubscriberZMQ.h"
 
 class SubscribeThread;
-class SubscribeWorker;
 
 class Client : public QMainWindow
 {
@@ -47,6 +47,9 @@ protected:
     void showEvent(QShowEvent *event);
 private slots:
     void about();
+    void reconnect();
+    void startSubscribe();
+    void stopSubscribe();
     
 signals:
     void stopWorker();
@@ -62,8 +65,7 @@ private:
     
     void initSubscriber();
     
-    void subscribe();
-    void stop();
+    bool isOnSubscribe();
     
     void onLog(QString msg);
     void onUpdateState(const dmsg::dclient::Subscriber::State& state);
@@ -74,11 +76,14 @@ private:
     QToolBar *fileToolBar;
     QToolBar *editToolBar;
     
+    QAction *disconnectAct;
+    QAction *reconnectAct;
     QAction *exitAct;
     QAction *aboutAct;
     QAction *aboutQtAct;
-    
-    QString m_toolbarText;
+
+    QLabel * m_statusLabel;
+    QLabel * m_pingLabel;
     QLCDNumber* m_lcdNumber;
     ClientLogger * m_logger;
     
@@ -87,47 +92,18 @@ private:
     
     SubscribeThread * m_subscribeThread;
     QThread* m_thread;
-    SubscribeWorker* m_worker;
+    
     friend class ClientLogger;
     friend class SubscribeListener;
 };
 
 
-class SubscribeWorker : public QObject
-{
-    Q_OBJECT
-    
-public:
-    SubscribeWorker(Client::SubscribeListener * m_subscribeListener, dmsg::MessageProviderJson * m_provider);
-    virtual ~SubscribeWorker();
-    
-public slots:
-    void process();
-    void stop();
-    
-    
-signals:
-    void finished();
-    
-private:
-    Client::SubscribeListener * m_subscribeListener;
-    dmsg::MessageProviderJson * m_provider;
-    dmsg::dclient::Subscriber* m_subscriber;
-};
-
-
-
 class SubscribeThread : public QThread
 {
     Q_OBJECT
-public:
-    SubscribeThread(QObject* parent) 
-        : QThread(parent)
-    {
-
-    }
     
-    ~SubscribeThread()
+public:
+   virtual ~SubscribeThread()
     {
         if(m_subscriber != NULL)
         {
@@ -135,6 +111,7 @@ public:
             {
                 m_subscriber->stop();
             }
+            
             qDebug() << "~SubscribeThread()";
             delete m_subscriber;
         }
@@ -152,7 +129,6 @@ private:
          m_subscriber = new dmsg::dclient::SubscriberZMQ(m_provider, "DATETIME_SERVER");
          m_subscriber->addListener(m_subscribeListener);
          m_subscriber->run(9000);
-    
     }
 
    Client::SubscribeListener * m_subscribeListener;
