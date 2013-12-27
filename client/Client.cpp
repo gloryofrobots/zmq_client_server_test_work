@@ -176,10 +176,9 @@ void Client::onLog(QString msg)
 /////////////////////////////////////////////////////////
 void Client::onUpdateState(const dclient::Subscriber::State &state)
 {
-    tm timedata = state.message.utc;
-    time_t timestamp = mktime(&timedata);
-    QDateTime datetime = QDateTime::fromTime_t(timestamp);
+
+    QDateTime datetime = QDateTime::fromTime_t(state.message.timestamp);
     qDebug() << datetime.toString(Qt::ISODate);
-    m_lcdNumber->display(datetime.toString(Qt::ISODate));
+    m_lcdNumber->display(datetime.toUTC().toString(Qt::ISODate));
 }
 /////////////////////////////////////////////////////////

@@ -8,6 +8,7 @@ namespace dmsg
     typedef TChar * TRawString;
     typedef const TChar * TRawConstString;
     typedef std::string TString;
+    typedef long long TTimeStamp;
 }
 
 #endif

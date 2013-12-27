@@ -76,7 +76,7 @@ namespace dmsg
             }
             
             const TString& message = getMessageString();
-            DMSG_LOGGER("%s - 1 2 3 %d",message.c_str(), 4);
+            DMSG_LOGGER(message.c_str());
             
             result = s_send_const(m_socket, message.c_str());
             if (result == -1)

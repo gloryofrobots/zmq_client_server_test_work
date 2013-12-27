@@ -64,6 +64,8 @@ inline value::value(float x) : value_(boost::lexical_cast<std::string>(x)), type
 inline value::value(long x) : value_(boost::lexical_cast<std::string>(x)), type_(type_number) {
 }
 
+inline value::value(long long x) : value_(boost::lexical_cast<std::string>(x)), type_(type_number) {
+}
 //------------------------------------------------------------------------------
 // Name: value
 //------------------------------------------------------------------------------

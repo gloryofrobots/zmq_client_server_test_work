@@ -6,7 +6,7 @@ namespace dmsg
 {
     struct Message
     {
-        tm utc;
+        TTimeStamp timestamp;
         TString id;
     };
 }

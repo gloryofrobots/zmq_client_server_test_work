@@ -39,6 +39,7 @@ namespace json {
 		explicit value(float x);
 		explicit value(int x);
 		explicit value(long x);
+		explicit value(long long x);
 
 	public:
 		explicit value(const boost::shared_ptr<object> &o);

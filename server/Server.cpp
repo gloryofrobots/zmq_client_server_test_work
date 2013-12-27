@@ -69,10 +69,10 @@ namespace dmsg
         /////////////////////////////////////////////////////
         bool Server::createNewMessageString()
         {
-            time_t now = time(0);
-            tm* utc = gmtime(&now);
-            memcpy((void *)&m_message.utc, (void *)utc, sizeof(tm));
-            
+            time_t t = time(0);
+            //tm* utc = gmtime(&t);
+            //m_message.timestamp = mktime(utc);
+            m_message.timestamp = t;
             if(m_messageProvider->serializeMessage(m_message, m_messageString) == false)
             {
                 DMSG_LOGGER("Error during serialization message ");
