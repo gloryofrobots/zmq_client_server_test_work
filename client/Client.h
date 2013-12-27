@@ -4,10 +4,35 @@
 
 #include <QMainWindow>
 #include <QLCDNumber>
+#include <QThread>
 #include "LogSystem.h"
 
 #include "MessageProviderJson.h"
 #include "SubscriberZMQ.h"
+
+class SubscribeThread : public QThread
+{
+    Q_OBJECT
+public:
+    SubscribeThread(QObject* parent) 
+        : QThread(parent)
+    {
+    
+    }
+
+    void setSubscriber( dmsg::dclient::Subscriber* subscriber)
+    {
+        m_subscriber = subscriber;
+    }
+
+private:
+    void run() 
+    {
+        m_subscriber->run(9000);
+    }
+    
+     dmsg::dclient::Subscriber* m_subscriber;
+};
 
 class Client : public QMainWindow
 {
@@ -38,7 +63,7 @@ public:
     
 protected:
     void closeEvent(QCloseEvent *event);
-    
+    void showEvent(QShowEvent *event);
 private slots:
     void about();
     

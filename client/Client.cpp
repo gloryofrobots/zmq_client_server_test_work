@@ -6,6 +6,7 @@
 #include "SubscriberZMQ.h"
 
 using namespace dmsg;
+
 //SubscribeListener
 Client::SubscribeListener::SubscribeListener(Client *client)
     : m_client(client)
@@ -82,7 +83,10 @@ void Client::showEvent(QShowEvent *event)
     QWidget::showEvent(event);
     QCoreApplication::processEvents();
     
-    
+    SubscribeThread* thread = new SubscribeThread(this);
+    thread->setSubscriber(m_subscriber);
+    thread->start();
+    //thread.wait();
 }
 /////////////////////////////////////////////////////////
 void Client::about()
@@ -95,6 +99,7 @@ void Client::createWidgets()
 {
     m_lcdNumber = new QLCDNumber(this);
     setCentralWidget(m_lcdNumber);
+    m_lcdNumber->setDigitCount(20);
 }
 /////////////////////////////////////////////////////////
 void Client::createActions()
@@ -166,5 +171,15 @@ void Client::writeSettings()
 /////////////////////////////////////////////////////////
 void Client::onLog(QString msg)
 {
+    qDebug() << msg;
+}
+/////////////////////////////////////////////////////////
+void Client::onUpdateState(const dclient::Subscriber::State &state)
+{
+    tm timedata = state.message.utc;
+    time_t timestamp = mktime(&timedata);
+    QDateTime datetime = QDateTime::fromTime_t(timestamp);
+    qDebug() << datetime.toString(Qt::ISODate);
+    m_lcdNumber->display(datetime.toString(Qt::ISODate));
 }
 /////////////////////////////////////////////////////////

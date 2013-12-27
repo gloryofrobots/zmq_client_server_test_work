@@ -75,8 +75,11 @@ namespace dmsg
             
             if(m_messageProvider->serializeMessage(m_message, m_messageString) == false)
             {
-                log("Error during serialization message ");
+                DMSG_LOGGER("Error during serialization message ");
+                return false;
             } 
+            
+            return true;
         }
         /////////////////////////////////////////////////////
         const TString &Server::getMessageString()
