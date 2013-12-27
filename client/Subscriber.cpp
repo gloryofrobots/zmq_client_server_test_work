@@ -70,7 +70,8 @@ namespace dmsg
                 if(isSuccess == false)
                 {
                     m_state.status = OFFLINE;
-                    m_isRun = false;
+                    stop();
+                    return false;
                 }
                 
                 m_state.status = ONLINE;

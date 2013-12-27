@@ -21,6 +21,8 @@ namespace dmsg
             , m_context(0)
             , m_socket(0)
         {
+            //init signal handler
+            s_catch_signals();
         }
         ///////////////////////////////////////
         SubscriberZMQ::~SubscriberZMQ()
@@ -65,8 +67,6 @@ namespace dmsg
                 return false;
             }
             
-            //init signal handler
-            s_catch_signals();
             return true;
         }
         ///////////////////////////////////////
@@ -76,6 +76,11 @@ namespace dmsg
             {
                 return false;
             } 
+            
+            if (isOnRun() == false)
+            {
+                return false;
+            }
             
             startTimer();
             TChar *subscribeId = s_recv(m_socket);

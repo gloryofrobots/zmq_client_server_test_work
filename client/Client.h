@@ -5,16 +5,9 @@
 #include <QMainWindow>
 #include <QLCDNumber>
 #include "LogSystem.h"
-#include "Subscriber.h"
 
-namespace dmsg
-{
-    class MessageProviderJson;
-    namespace dclient
-    {
-        class SubscriberZMQ;
-    }
-}
+#include "MessageProviderJson.h"
+#include "SubscriberZMQ.h"
 
 class Client : public QMainWindow
 {
@@ -79,6 +72,7 @@ private:
     QString m_toolbarText;
     QLCDNumber* m_lcdNumber;
     ClientLogger * m_logger;
+    
     SubscribeListener * m_subscribeListener;
     dmsg::MessageProviderJson * m_provider;
     dmsg::dclient::SubscriberZMQ* m_subscriber;

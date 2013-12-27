@@ -73,7 +73,10 @@ namespace dmsg
             tm* utc = gmtime(&now);
             memcpy((void *)&m_message.utc, (void *)utc, sizeof(tm));
             
-            return m_messageProvider->serializeMessage(m_message, m_messageString);
+            if(m_messageProvider->serializeMessage(m_message, m_messageString) == false)
+            {
+                log("Error during serialization message ");
+            } 
         }
         /////////////////////////////////////////////////////
         const TString &Server::getMessageString()

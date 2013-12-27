@@ -6,7 +6,7 @@
 #include "SubscriberZMQ.h"
 
 using namespace dmsg;
-
+//SubscribeListener
 Client::SubscribeListener::SubscribeListener(Client *client)
     : m_client(client)
 {
@@ -14,7 +14,9 @@ Client::SubscribeListener::SubscribeListener(Client *client)
 /////////////////////////////////////////////////////////
 void Client::SubscribeListener::update(const dclient::Subscriber::State &state)
 {
+    m_client->onUpdateState(state);
 }
+//ClientLogger
 /////////////////////////////////////////////////////////
 Client::ClientLogger::ClientLogger(Client * client)
     : m_client(client)
@@ -36,7 +38,7 @@ Client::Client()
     
     initLogSystem();
     initSubscriber();
-        
+    
     readSettings();
     createActions();
     createMenus();
@@ -73,6 +75,14 @@ void Client::closeEvent(QCloseEvent *event)
 {
     writeSettings();
     event->accept();
+}
+/////////////////////////////////////////////////////////
+void Client::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+    QCoreApplication::processEvents();
+    
+    
 }
 /////////////////////////////////////////////////////////
 void Client::about()
