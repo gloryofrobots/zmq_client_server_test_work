@@ -61,6 +61,7 @@ s_send (void *socket,const char *string) {
 // Convert C string to 0MQ string and send to socket
 static int
 s_send_const (void *socket,const char *string) {
+;
     int size = zmq_send_const (socket, string, strlen (string), 0);
     return size;
 }

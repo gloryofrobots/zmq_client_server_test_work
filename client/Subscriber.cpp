@@ -12,7 +12,11 @@ namespace dmsg
             , m_subscribeId(subscribeId)
         {
             m_timer = new TimerBoost();
+            
             m_state.status = OFFLINE;
+            m_state.message.timestamp = 0;
+            m_state.message.id = "";
+            m_state.pingTime = 0;
         }
         /////////////////////////////////////////////////////
         Subscriber::~Subscriber()

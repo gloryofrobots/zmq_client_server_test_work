@@ -10,6 +10,31 @@
 #include "MessageProviderJson.h"
 #include "SubscriberZMQ.h"
 
+
+
+class SubscribeWorker : public QObject
+{
+    Q_OBJECT
+    
+public:
+    void setSubscriber( dmsg::dclient::Subscriber* subscriber);
+    
+public slots:
+    void process();
+    void stop();
+   
+
+signals:
+    void finished();
+    
+private:
+     dmsg::dclient::Subscriber* m_subscriber;
+};
+
+
+
+
+
 class SubscribeThread : public QThread
 {
     Q_OBJECT
@@ -66,6 +91,9 @@ protected:
     void showEvent(QShowEvent *event);
 private slots:
     void about();
+
+signals:
+    void stopWorker();
     
 private:
     void createWidgets();
@@ -102,6 +130,8 @@ private:
     dmsg::MessageProviderJson * m_provider;
     dmsg::dclient::SubscriberZMQ* m_subscriber;
     
+    QThread* m_thread;
+    SubscribeWorker* m_worker;
     friend class ClientLogger;
     friend class SubscribeListener;
 };

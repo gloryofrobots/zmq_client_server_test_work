@@ -82,7 +82,9 @@ namespace dmsg
                 return false;
             }
             
+            
             startTimer();
+           
             TChar *subscribeId = s_recv(m_socket);
             if(subscribeId == NULL)
             {
@@ -119,7 +121,7 @@ namespace dmsg
         ///////////////////////////////////////
         bool SubscriberZMQ::_onStop()
         {
-            clear();
+            //clear();
         }
         ///////////////////////////////////////
         void SubscriberZMQ::clear()

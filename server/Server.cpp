@@ -16,6 +16,7 @@ namespace dmsg
         {
             m_uuid = new UUIDBoost();
             m_message.id = m_uuid->toCharArray();
+            m_message.timestamp = 0;
         }
         /////////////////////////////////////////////////////
         Server::~Server()

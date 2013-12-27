@@ -7,6 +7,25 @@
 
 using namespace dmsg;
 
+void SubscribeWorker::setSubscriber( dmsg::dclient::Subscriber* subscriber)
+{
+    m_subscriber = subscriber;
+}
+
+void SubscribeWorker::process()
+{
+    m_subscriber->run(9000);
+    emit finished();
+}
+
+void SubscribeWorker::stop()
+{
+    if (m_subscriber != NULL)
+    {
+        m_subscriber->stop();
+    }
+}
+
 //SubscribeListener
 Client::SubscribeListener::SubscribeListener(Client *client)
     : m_client(client)
@@ -51,12 +70,17 @@ Client::~Client()
     //stop here
     if(m_subscriber != NULL)
     {
+        if(m_subscriber->isOnRun())
+        {
+            m_subscriber->stop();
+        }
+        
         delete m_subscriber;
     }
     
     if(m_subscribeListener != NULL)
     {
-        delete m_subscriber;
+        delete m_subscribeListener;
     }
     
     if(m_provider != NULL)
@@ -75,6 +99,9 @@ Client::~Client()
 void Client::closeEvent(QCloseEvent *event)
 {
     writeSettings();
+    m_worker->stop();
+    m_thread->wait(100);
+    //emit stopWorker();
     event->accept();
 }
 /////////////////////////////////////////////////////////
@@ -83,10 +110,29 @@ void Client::showEvent(QShowEvent *event)
     QWidget::showEvent(event);
     QCoreApplication::processEvents();
     
-    SubscribeThread* thread = new SubscribeThread(this);
-    thread->setSubscriber(m_subscriber);
-    thread->start();
+    //SubscribeThread* thread = new SubscribeThread(this);
+    //thread->setSubscriber(m_subscriber);
+    //thread->start();
     //thread.wait();
+    
+    m_worker = new SubscribeWorker;
+    SubscribeWorker* worker = m_worker;
+    m_thread = new QThread();
+    QThread* thread = m_thread;
+    worker->moveToThread(thread);
+    worker->setSubscriber(m_subscriber);
+    
+    connect(thread, SIGNAL(started()), worker, SLOT(process()));
+    
+    connect(worker, SIGNAL(finished()), thread, SLOT(quit()));
+    
+    connect(this, SIGNAL(stopWorker()), worker, SLOT(stop()));
+    
+    connect(worker, SIGNAL(finished()), worker, SLOT(deleteLater()));
+    
+    connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
+    
+    thread->start();
 }
 /////////////////////////////////////////////////////////
 void Client::about()
@@ -176,9 +222,14 @@ void Client::onLog(QString msg)
 /////////////////////////////////////////////////////////
 void Client::onUpdateState(const dclient::Subscriber::State &state)
 {
-
+    if(state.message.timestamp == 0)
+    {
+        m_lcdNumber->display("0000-00-00 00-00-00");
+        return;
+    }
+    
     QDateTime datetime = QDateTime::fromTime_t(state.message.timestamp);
-    qDebug() << datetime.toString(Qt::ISODate);
-    m_lcdNumber->display(datetime.toUTC().toString(Qt::ISODate));
+    //qDebug() << datetime.toString(Qt::ISODate);
+    m_lcdNumber->display(datetime.toString(Qt::ISODate));
 }
 /////////////////////////////////////////////////////////
