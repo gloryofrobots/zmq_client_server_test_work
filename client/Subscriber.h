@@ -15,9 +15,15 @@ namespace dmsg
                 OFFLINE, ONLINE
             };
             
+            enum ERequestStatus
+            {
+                FATAL_ERROR, ERROR, COMPLETE
+            };
+            
             struct State
             {
                 EStateStatus status;
+                ERequestStatus requestStatus;
                 Message message;
                 long pingTime;
             };
@@ -39,7 +45,7 @@ namespace dmsg
             bool isOnRun();
         protected:  
             virtual bool _onInit(TUInt port) = 0;
-            virtual bool _onUpdate() = 0;
+            virtual ERequestStatus _onUpdate() = 0;
             virtual bool _onStop() = 0;
             
             void startTimer();

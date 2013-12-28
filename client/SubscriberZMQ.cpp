@@ -70,18 +70,17 @@ namespace dmsg
             return true;
         }
         ///////////////////////////////////////
-        bool SubscriberZMQ::_onUpdate()
+        Subscriber::ERequestStatus SubscriberZMQ::_onUpdate()
         {
             if (s_interrupted)
             {
-                return false;
+                return FATAL_ERROR;
             } 
             
             if (isOnRun() == false)
             {
-                return false;
+                return FATAL_ERROR;
             }
-            
             
             startTimer();
            
@@ -89,14 +88,15 @@ namespace dmsg
             if(subscribeId == NULL)
             {
                 zmqlog("Error receiving subscribe id");
-                return false;
+                return ERROR;
             }
             
             TChar *contents = s_recv(m_socket);
             if(contents == NULL)
             {
                 zmqlog("Error receiving message contents");
-                return false;
+                free(subscribeId);
+                return ERROR;
             }
             
             stopTimer();
@@ -106,22 +106,20 @@ namespace dmsg
             if (parseMessage(data) == false)
             {
                 DMSG_LOGGER("Error parsing message %s", contents);
-                //free(subscribeId);
-                //free(contents);
-                //return false;
+                free(subscribeId);
+                free(contents);
+                return ERROR;
             }
             
-            //log("%i [%s] %s \n",(int)m_state.pingTime, m_state.message.id.c_str(), contents);
             //DMSG_LOGGER(" %s ", contents);
             free(subscribeId);
             free(contents);
-
-            return true;
+            return COMPLETE;
         }
         ///////////////////////////////////////
         bool SubscriberZMQ::_onStop()
         {
-            //clear();
+            clear();
         }
         ///////////////////////////////////////
         void SubscriberZMQ::clear()

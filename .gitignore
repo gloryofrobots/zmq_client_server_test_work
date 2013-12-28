@@ -1,5 +1,5 @@
 # C++ objects and libs
-build/
+build/*
 *.slo
 *.lo
 *.o
@@ -21,3 +21,4 @@ moc_*.cpp
 qrc_*.cpp
 Makefile
 *-build-*
+*/CMakeFiles/*

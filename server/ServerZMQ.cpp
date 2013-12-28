@@ -5,6 +5,7 @@ extern "C"
 #include "zmqhelpers.h"
 }
 #include <iostream>
+#include <algorithm>
 namespace dmsg
 {
     namespace dserver
@@ -77,7 +78,9 @@ namespace dmsg
             }
             
             const TString& message = getMessageString();
-            DMSG_LOGGER(message.c_str());
+            TString msg = message;
+            std::replace(msg.begin(), msg.end(), '{', ')');
+            //DMSG_LOGGER(message.c_str());
             
             result = s_send(m_socket, message.c_str());
             if (result == -1)

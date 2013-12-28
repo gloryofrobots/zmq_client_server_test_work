@@ -3,12 +3,14 @@
 #define CLIENT_H
 
 #include <QtDebug>
+#include <QTimer>
 #include <QMainWindow>
 #include <QLCDNumber>
 #include <QLabel>
 #include <QThread>
 #include "LogSystem.h"
 
+#include "types.h"
 #include "MessageProviderJson.h"
 #include "SubscriberZMQ.h"
 
@@ -20,6 +22,7 @@ class Client : public QMainWindow
     
 public:
     //////////////////////////////////////////////////////////////
+    //It work`s on background thread and call update-gui proc in client
     class SubscribeListener : public dmsg::dclient::Subscriber::SubscribeListener
     {
     public:
@@ -29,6 +32,7 @@ public:
         Client * m_client;
     };
     //////////////////////////////////////////////////////////////
+    //send messages to client
     class ClientLogger : public dmsg::Logger
     {
     public:
@@ -51,10 +55,13 @@ private slots:
     void startSubscribe();
     void stopSubscribe();
     
+    //slot for checking connection timeout
+    void connectionTimerOut();
 signals:
     void stopWorker();
     
 private:
+    //intitialisers
     void createWidgets();
     void createActions();
     void createMenus();
@@ -64,9 +71,23 @@ private:
     void writeSettings();
     
     void initSubscriber();
+    void initDefaultConditions();
     
+    //check if exist active background thread
     bool isOnSubscribe();
     
+    //update connection status
+    void updateStatus(bool isOnline);
+    
+    //update ping time label. if pingTime < 0 set empty string
+    void updatePingTime(long pingTime);
+    
+    //update LCD Number
+    void updateDate(dmsg::TTimeStamp timestamp);
+    
+    void updateLogView(const dmsg::dclient::Subscriber::State& state);
+    
+    //write messages to label
     void onLog(QString msg);
     void onUpdateState(const dmsg::dclient::Subscriber::State& state);
     
@@ -84,6 +105,7 @@ private:
 
     QLabel * m_statusLabel;
     QLabel * m_pingLabel;
+    QLabel * m_logLabel;
     QLCDNumber* m_lcdNumber;
     ClientLogger * m_logger;
     
@@ -92,12 +114,12 @@ private:
     
     SubscribeThread * m_subscribeThread;
     QThread* m_thread;
-    
+    QTimer * m_timer;
     friend class ClientLogger;
     friend class SubscribeListener;
 };
 
-
+//run subscriber client in background
 class SubscribeThread : public QThread
 {
     Q_OBJECT

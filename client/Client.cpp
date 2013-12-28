@@ -6,7 +6,7 @@
 #include "SubscriberZMQ.h"
 
 using namespace dmsg;
-
+#define CONNECTION_CHECK_TIME 5000 
 //SubscribeListener
 Client::SubscribeListener::SubscribeListener(Client *client)
     : m_client(client)
@@ -35,6 +35,7 @@ Client::Client()
     , m_provider(NULL)
 {
     createWidgets();
+    initDefaultConditions();
     
     initLogSystem();
     initSubscriber();
@@ -63,7 +64,7 @@ Client::~Client()
     }
     
     LogSystem::destroy();
-
+    
     qDebug() << "~Client()";
 }
 /////////////////////////////////////////////////////////
@@ -79,7 +80,6 @@ void Client::showEvent(QShowEvent *event)
     QWidget::showEvent(event);
     QCoreApplication::processEvents();
     startSubscribe();
-  
 }
 /////////////////////////////////////////////////////////
 void Client::about()
@@ -100,25 +100,26 @@ void Client::reconnect()
 /////////////////////////////////////////////////////////
 void Client::createWidgets()
 {
-     /*m_lcdNumber = new QLCDNumber(this);
+    /*m_lcdNumber = new QLCDNumber(this);
      m_lcdNumber->setDigitCount(20);
      setCentralWidget(m_lcdNumber);*/
-     
-     QWidget* window = new QWidget(this);
-     
-     m_lcdNumber = new QLCDNumber;
-     m_lcdNumber->setDigitCount(20);
-     m_statusLabel = new QLabel("STATUS");
-     m_pingLabel = new QLabel("PING");
     
-     QGridLayout *layout = new QGridLayout;
-     layout->addWidget(m_lcdNumber, 0, 0, 1, 2);
-     layout->addWidget(m_statusLabel, 1, 0);
-     layout->addWidget(m_pingLabel, 1, 1);
-  
-     window->setLayout(layout);
-
-     this->setCentralWidget(window);
+    QWidget* window = new QWidget(this);
+    
+    m_lcdNumber = new QLCDNumber;
+    m_lcdNumber->setDigitCount(20);
+    m_statusLabel = new QLabel("");
+    m_pingLabel = new QLabel("");
+    m_logLabel = new QLabel("");
+    QGridLayout *layout = new QGridLayout;
+    layout->addWidget(m_lcdNumber, 0, 0, 1, 2);
+    layout->addWidget(m_statusLabel, 1, 0);
+    layout->addWidget(m_pingLabel, 1, 1);
+    layout->addWidget(m_logLabel, 2, 0);
+    
+    window->setLayout(layout);
+    
+    this->setCentralWidget(window);
 }
 /////////////////////////////////////////////////////////
 void Client::createActions()
@@ -128,7 +129,7 @@ void Client::createActions()
     
     exitAct->setStatusTip(tr("Exit the application"));
     connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
-
+    
     reconnectAct = new QAction(tr("&Reconnect"), this);
     reconnectAct->setStatusTip(tr("Reconnect"));
     connect(reconnectAct, SIGNAL(triggered()), this, SLOT(reconnect()));
@@ -178,6 +179,16 @@ void Client::initSubscriber()
 {
     m_provider = new MessageProviderJson(); 
     m_subscribeListener = new SubscribeListener(this);
+    
+    m_timer = new QTimer(this);
+    connect(m_timer, SIGNAL(timeout()), this, SLOT(connectionTimerOut()));
+}
+/////////////////////////////////////////////////////////
+void Client::initDefaultConditions()
+{
+    updateDate(0);
+    updatePingTime(-1);
+    updateStatus(dclient::Subscriber::OFFLINE);
 }
 /////////////////////////////////////////////////////////
 void Client::startSubscribe()
@@ -192,6 +203,7 @@ void Client::startSubscribe()
     m_subscribeThread->setSubscriber(m_subscribeListener, m_provider);
     connect(m_subscribeThread, SIGNAL(finished()), m_subscribeThread, SLOT(deleteLater()));
     m_subscribeThread->start();
+    
 }
 /////////////////////////////////////////////////////////
 void Client::stopSubscribe()
@@ -205,11 +217,58 @@ void Client::stopSubscribe()
     m_subscribeThread->terminate();
     m_subscribeThread->wait();
     m_subscribeThread = NULL;
+    updateStatus(false);
+}
+/////////////////////////////////////////////////////////
+void Client::connectionTimerOut()
+{
+    updateStatus(false);
 }
 /////////////////////////////////////////////////////////
 bool Client::isOnSubscribe()
 {
-    return m_subscribeThread == NULL;
+    return m_subscribeThread != NULL;
+}
+/////////////////////////////////////////////////////////
+void Client::updateStatus(bool isOnline)
+{
+    QString connectionType = tr("Connection is ");
+    connectionType += isOnline ? tr("online") : tr("offline");
+    m_statusLabel->setText(connectionType);
+}
+/////////////////////////////////////////////////////////
+void Client::updatePingTime(long pingTime)
+{
+    if (pingTime < 0)
+    {
+         m_pingLabel->setText("");
+         return;
+    }
+    
+    QString ping = tr("Ping time: ") + QString::number(pingTime);
+    m_pingLabel->setText(ping);
+}
+/////////////////////////////////////////////////////////
+void Client::updateDate(TTimeStamp timestamp)
+{
+    if (timestamp == 0)
+    {
+        m_lcdNumber->display("0000-00-00 00-00-00");
+    }
+    else
+    {
+        QDateTime datetime = QDateTime::fromTime_t(timestamp);
+        m_lcdNumber->display(datetime.toString(Qt::ISODate));
+    }
+}
+/////////////////////////////////////////////////////////
+//clear log label if we get complete message
+void Client::updateLogView(const dclient::Subscriber::State &state)
+{
+    if (state.requestStatus == dclient::Subscriber::COMPLETE)
+    {
+        m_logLabel->setText("");
+    }
 }
 /////////////////////////////////////////////////////////
 void Client::readSettings()
@@ -230,30 +289,24 @@ void Client::writeSettings()
 /////////////////////////////////////////////////////////
 void Client::onLog(QString msg)
 {
-    qDebug() << msg;
+    m_logLabel->setText(msg);
+    //qDebug() << msg;
 }
 /////////////////////////////////////////////////////////
 void Client::onUpdateState(const dclient::Subscriber::State &state)
 {
-    if(state.message.timestamp == 0)
+    
+    updateDate(state.message.timestamp);
+    updatePingTime(state.pingTime);
+    updateStatus(state.status == dclient::Subscriber::ONLINE);
+    updateLogView(state);
+    
+    if (m_timer->isActive())
     {
-        m_lcdNumber->display("0000-00-00 00-00-00");
-        m_pingLabel->setText("");
-    }
-    else
-    {
-        QDateTime datetime = QDateTime::fromTime_t(state.message.timestamp);
-        //qDebug() << datetime.toString(Qt::ISODate);
-        m_lcdNumber->display(datetime.toString(Qt::ISODate));
-        
-        QString ping = tr("Ping time: ") + QString::number(state.pingTime);
-        m_pingLabel->setText(ping);
+        m_timer->stop();
     }
     
-    QString connectionType = tr("Connection is ");
-    connectionType += state.status == dclient::Subscriber::OFFLINE ? tr("offline") : tr("online");
-
-    m_statusLabel->setText(connectionType);
+    m_timer->start(CONNECTION_CHECK_TIME);
 }
 /////////////////////////////////////////////////////////
 

@@ -13,7 +13,7 @@ namespace dmsg
             
         protected:  
             virtual bool _onInit(TUInt port);
-            virtual bool _onUpdate();
+            virtual ERequestStatus _onUpdate();
             virtual bool _onStop();
 
         private:

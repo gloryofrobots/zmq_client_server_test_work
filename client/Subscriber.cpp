@@ -32,8 +32,6 @@ namespace dmsg
                 return;
             }
             
-            listener->update(m_state);
-            
             m_listeners.push_back(listener);
         }
         /////////////////////////////////////////////////////
@@ -111,7 +109,13 @@ namespace dmsg
                 return false;
             }
             
-            return this->_onUpdate();
+            m_state.requestStatus = this->_onUpdate();
+            if (m_state.requestStatus == FATAL_ERROR)
+            {
+                return false;
+            }
+            
+            return true;
         }
         /////////////////////////////////////////////////////
         void Subscriber::notifyListenersForUpdate()
