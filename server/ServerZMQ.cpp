@@ -78,8 +78,8 @@ namespace dmsg
             }
             
             const TString& message = getMessageString();
-            TString msg = message;
-            std::replace(msg.begin(), msg.end(), '{', ')');
+            //TString msg = message;
+            //std::replace(msg.begin(), msg.end(), '{', ')');
             //DMSG_LOGGER(message.c_str());
             
             result = s_send(m_socket, message.c_str());
