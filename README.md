@@ -11,4 +11,6 @@ zmq_client_server_test_work
 
 <h4>Build</h4>
 sh build.sh <br />
-Executable files will locate in build/server and build/client dirs
+Executable files will locate in build/server and build/client dirs <br />
+
+You can add to QTCreator projects from dirs client and server
