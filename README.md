@@ -10,5 +10,5 @@ zmq_client_server_test_work
 </ul>
 
 <h4>Build</h4>
-sh build.sh
+sh build.sh <br />
 Executable files will locate in build/server and build/client dirs
